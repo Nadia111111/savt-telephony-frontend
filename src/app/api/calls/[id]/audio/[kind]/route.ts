@@ -5,7 +5,8 @@ export async function GET(
   { params }: { params: { id: string; kind: string } }
 ) {
   const { id, kind } = params;
-  const backendUrl = `http://127.0.0.1:18080/api/calls/${id}/audio/${kind}`;
+  const baseUrl = (process.env.BACKEND_URL || 'http://127.0.0.1:18080').replace(/\/+$/, '');
+  const backendUrl = `${baseUrl}/api/calls/${id}/audio/${kind}`;
 
   const forwardHeaders: HeadersInit = {};
   const range = request.headers.get('range');
@@ -51,7 +52,7 @@ export async function GET(
     });
   } catch (error) {
     return NextResponse.json(
-      { detail: 'Не удалось связаться с сервером телефонии (127.0.0.1:18080)' },
+      { detail: `Не удалось связаться с сервером телефонии (${baseUrl})` },
       { status: 502 }
     );
   }
