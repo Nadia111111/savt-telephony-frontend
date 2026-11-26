@@ -2,9 +2,22 @@
 
 import React, { useEffect, useRef } from 'react';
 
+type Ripple = {
+  x: number;
+  y: number;
+  startTime: number;
+  duration: number;
+  startRadius: number;
+  maxRadius: number;
+  maxAlpha: number;
+  lineWidth: number;
+  hasGlow: boolean;
+};
+
 /**
- * Interactive 2D shallow-water ripple simulation rendered on a transparent canvas.
- * Reacts to pointer clicks/taps and cursor movement anywhere on the login page.
+ * Smooth HiDPI vector water ripple overlay rendered on HTML5 Canvas.
+ * Completely idle when there is no pointer interaction, spawns sparse subtle
+ * drops on mouse movement, and multi-ring water splashes on click/tap anywhere.
  */
 export default function WaterBackground() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -15,72 +28,161 @@ export default function WaterBackground() {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    const SCALE = 4;
-    const DAMPING = 0.98;
-
     let width = window.innerWidth;
     let height = window.innerHeight;
-    let cols = Math.max(60, Math.floor(width / SCALE));
-    let rows = Math.max(40, Math.floor(height / SCALE));
-
-    let buf1 = new Float32Array(cols * rows);
-    let buf2 = new Float32Array(cols * rows);
-
-    const offscreen = document.createElement('canvas');
-    const offCtx = offscreen.getContext('2d');
-    let imgData: ImageData | null = null;
+    let dpr = Math.min(window.devicePixelRatio || 1, 2);
 
     const resize = () => {
       width = window.innerWidth;
       height = window.innerHeight;
-      canvas.width = width;
-      canvas.height = height;
-
-      cols = Math.max(60, Math.floor(width / SCALE));
-      rows = Math.max(40, Math.floor(height / SCALE));
-
-      buf1 = new Float32Array(cols * rows);
-      buf2 = new Float32Array(cols * rows);
-
-      offscreen.width = cols;
-      offscreen.height = rows;
-      imgData = offCtx ? offCtx.createImageData(cols, rows) : null;
-    };
-
-    const disturb = (clientX: number, clientY: number, radius: number, strength: number) => {
-      const gx = Math.floor((clientX / Math.max(1, width)) * cols);
-      const gy = Math.floor((clientY / Math.max(1, height)) * rows);
-      const rSq = radius * radius;
-
-      const minY = Math.max(1, gy - radius);
-      const maxY = Math.min(rows - 2, gy + radius);
-      const minX = Math.max(1, gx - radius);
-      const maxX = Math.min(cols - 2, gx + radius);
-
-      for (let y = minY; y <= maxY; y++) {
-        const dy = y - gy;
-        const rowOffset = y * cols;
-        for (let x = minX; x <= maxX; x++) {
-          const dx = x - gx;
-          const distSq = dx * dx + dy * dy;
-          if (distSq <= rSq) {
-            const dist = Math.sqrt(distSq);
-            const falloff = 0.5 + 0.5 * Math.cos((Math.PI * dist) / radius);
-            buf1[rowOffset + x] -= strength * falloff;
-          }
-        }
-      }
+      dpr = Math.min(window.devicePixelRatio || 1, 2);
+      canvas.width = Math.floor(width * dpr);
+      canvas.height = Math.floor(height * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     };
 
     resize();
     window.addEventListener('resize', resize);
+
+    const ripples: Ripple[] = [];
+    let animId = 0;
+    let isRunning = false;
+
+    const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3);
+
+    const render = (now: number) => {
+      ctx.clearRect(0, 0, width, height);
+
+      for (let i = ripples.length - 1; i >= 0; i--) {
+        const r = ripples[i];
+        const elapsed = now - r.startTime;
+
+        if (elapsed < 0) continue;
+        if (elapsed >= r.duration) {
+          ripples.splice(i, 1);
+          continue;
+        }
+
+        const progress = elapsed / r.duration;
+        const radius = r.startRadius + (r.maxRadius - r.startRadius) * easeOutCubic(progress);
+        const fade = Math.pow(1 - progress, 1.8) * Math.min(1, progress * 10);
+        const alpha = r.maxAlpha * fade;
+
+        if (alpha <= 0.004) continue;
+
+        // Soft liquid refraction band around the wave crest
+        if (r.hasGlow && radius > 10) {
+          const innerR = Math.max(0, radius - 14);
+          const outerR = radius + 12;
+          const grad = ctx.createRadialGradient(r.x, r.y, innerR, r.x, r.y, outerR);
+          grad.addColorStop(0, 'rgba(56, 189, 248, 0)');
+          grad.addColorStop(0.55, `rgba(56, 189, 248, ${(alpha * 0.22).toFixed(4)})`);
+          grad.addColorStop(1, 'rgba(37, 99, 235, 0)');
+
+          ctx.beginPath();
+          ctx.arc(r.x, r.y, outerR, 0, Math.PI * 2);
+          ctx.fillStyle = grad;
+          ctx.fill();
+        }
+
+        // Primary anti-aliased water wave ring
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(r.x, r.y, radius, 0, Math.PI * 2);
+        ctx.lineWidth = r.lineWidth * (1 - progress * 0.35);
+        ctx.strokeStyle = `rgba(125, 211, 252, ${alpha.toFixed(4)})`;
+        ctx.shadowColor = `rgba(56, 189, 248, ${(alpha * 0.65).toFixed(4)})`;
+        ctx.shadowBlur = 10;
+        ctx.stroke();
+
+        // Subtle top-left specular light arc on the crest
+        ctx.beginPath();
+        ctx.arc(r.x, r.y, radius, -Math.PI * 0.85, -Math.PI * 0.15);
+        ctx.lineWidth = Math.max(0.8, r.lineWidth * 0.65);
+        ctx.strokeStyle = `rgba(224, 242, 254, ${(alpha * 0.75).toFixed(4)})`;
+        ctx.shadowBlur = 4;
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      if (ripples.length > 0) {
+        animId = window.requestAnimationFrame(render);
+      } else {
+        isRunning = false;
+      }
+    };
+
+    const startLoop = () => {
+      if (!isRunning) {
+        isRunning = true;
+        animId = window.requestAnimationFrame(render);
+      }
+    };
+
+    const spawnClickSplash = (x: number, y: number) => {
+      const now = performance.now();
+      ripples.push(
+        {
+          x,
+          y,
+          startTime: now,
+          duration: 1400,
+          startRadius: 4,
+          maxRadius: 170,
+          maxAlpha: 0.44,
+          lineWidth: 2.2,
+          hasGlow: true,
+        },
+        {
+          x,
+          y,
+          startTime: now + 120,
+          duration: 1200,
+          startRadius: 4,
+          maxRadius: 125,
+          maxAlpha: 0.3,
+          lineWidth: 1.6,
+          hasGlow: true,
+        },
+        {
+          x,
+          y,
+          startTime: now + 240,
+          duration: 1000,
+          startRadius: 3,
+          maxRadius: 80,
+          maxAlpha: 0.2,
+          lineWidth: 1.2,
+          hasGlow: false,
+        }
+      );
+      if (ripples.length > 48) ripples.splice(0, ripples.length - 48);
+      startLoop();
+    };
+
+    const spawnMoveDrop = (x: number, y: number) => {
+      const now = performance.now();
+      ripples.push({
+        x,
+        y,
+        startTime: now,
+        duration: 1050,
+        startRadius: 3,
+        maxRadius: 72,
+        maxAlpha: 0.24,
+        lineWidth: 1.3,
+        hasGlow: true,
+      });
+      if (ripples.length > 48) ripples.splice(0, ripples.length - 48);
+      startLoop();
+    };
 
     let lastMoveTime = 0;
     let lastMoveX = -1000;
     let lastMoveY = -1000;
 
     const handlePointerDown = (e: PointerEvent) => {
-      disturb(e.clientX, e.clientY, 6, 340);
+      spawnClickSplash(e.clientX, e.clientY);
     };
 
     const handlePointerMove = (e: PointerEvent) => {
@@ -93,75 +195,15 @@ export default function WaterBackground() {
       }
       const dx = e.clientX - lastMoveX;
       const dy = e.clientY - lastMoveY;
-      if (now - lastMoveTime < 240 || dx * dx + dy * dy < 9025) return;
+      if (now - lastMoveTime < 260 || dx * dx + dy * dy < 10000) return;
       lastMoveTime = now;
       lastMoveX = e.clientX;
       lastMoveY = e.clientY;
-      disturb(e.clientX, e.clientY, 3, 52);
+      spawnMoveDrop(e.clientX, e.clientY);
     };
 
     window.addEventListener('pointerdown', handlePointerDown);
     window.addEventListener('pointermove', handlePointerMove, { passive: true });
-
-    let animId = 0;
-    const step = () => {
-      for (let y = 1; y < rows - 1; y++) {
-        const row = y * cols;
-        for (let x = 1; x < cols - 1; x++) {
-          const i = row + x;
-          const nextVal =
-            ((buf1[i - 1] + buf1[i + 1] + buf1[i - cols] + buf1[i + cols]) * 0.5 - buf2[i]) *
-            DAMPING;
-          buf2[i] = Math.max(-600, Math.min(600, nextVal));
-        }
-      }
-
-      if (offCtx && imgData) {
-        const pixels = imgData.data;
-        for (let y = 1; y < rows - 1; y++) {
-          const row = y * cols;
-          for (let x = 1; x < cols - 1; x++) {
-            const i = row + x;
-            const sx = buf2[i - 1] - buf2[i + 1];
-            const sy = buf2[i - cols] - buf2[i + cols];
-            const mag = Math.abs(sx) + Math.abs(sy);
-            const p = i * 4;
-
-            if (mag < 0.7) {
-              pixels[p + 3] = 0;
-              continue;
-            }
-
-            const slope = sx + sy;
-            if (slope > 0) {
-              const intensity = Math.min(1, slope / 160);
-              pixels[p] = 155 + Math.round(100 * intensity);
-              pixels[p + 1] = 212 + Math.round(43 * intensity);
-              pixels[p + 2] = 255;
-              pixels[p + 3] = Math.min(185, Math.round(mag * 1.45));
-            } else {
-              pixels[p] = 12;
-              pixels[p + 1] = 58;
-              pixels[p + 2] = 140;
-              pixels[p + 3] = Math.min(115, Math.round(mag * 0.95));
-            }
-          }
-        }
-
-        offCtx.putImageData(imgData, 0, 0);
-        ctx.clearRect(0, 0, width, height);
-        ctx.imageSmoothingEnabled = true;
-        ctx.drawImage(offscreen, 0, 0, width, height);
-      }
-
-      const tmp = buf1;
-      buf1 = buf2;
-      buf2 = tmp;
-
-      animId = window.requestAnimationFrame(step);
-    };
-
-    animId = window.requestAnimationFrame(step);
 
     return () => {
       window.cancelAnimationFrame(animId);
