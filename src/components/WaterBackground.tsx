@@ -85,13 +85,19 @@ export default function WaterBackground() {
 
     const handlePointerMove = (e: PointerEvent) => {
       const now = performance.now();
+      if (lastMoveX < 0) {
+        lastMoveX = e.clientX;
+        lastMoveY = e.clientY;
+        lastMoveTime = now;
+        return;
+      }
       const dx = e.clientX - lastMoveX;
       const dy = e.clientY - lastMoveY;
-      if (now - lastMoveTime < 55 || dx * dx + dy * dy < 196) return;
+      if (now - lastMoveTime < 240 || dx * dx + dy * dy < 9025) return;
       lastMoveTime = now;
       lastMoveX = e.clientX;
       lastMoveY = e.clientY;
-      disturb(e.clientX, e.clientY, 2, 32);
+      disturb(e.clientX, e.clientY, 3, 52);
     };
 
     window.addEventListener('pointerdown', handlePointerDown);
