@@ -6,26 +6,26 @@ import { apiFetch, extractApiError } from '@/lib/api-client';
 import { Lock, User, AlertCircle, CheckCircle2, RefreshCw, X, KeyRound } from 'lucide-react';
 
 const BG_LOGOS = [
-  { top: '4%', left: '5%', size: 110, blur: 8, opacity: 0.22, rot: '-18deg', dur: '15s' },
-  { top: '8%', left: '24%', size: 78, blur: 11, opacity: 0.16, rot: '14deg', dur: '18s' },
-  { top: '6%', left: '48%', size: 96, blur: 13, opacity: 0.14, rot: '-8deg', dur: '16s' },
-  { top: '5%', left: '72%', size: 124, blur: 9, opacity: 0.2, rot: '22deg', dur: '19s' },
-  { top: '12%', left: '88%', size: 86, blur: 10, opacity: 0.18, rot: '-24deg', dur: '14s' },
-  { top: '26%', left: '12%', size: 138, blur: 10, opacity: 0.19, rot: '12deg', dur: '20s' },
-  { top: '28%', left: '34%', size: 74, blur: 14, opacity: 0.14, rot: '-15deg', dur: '17s' },
-  { top: '25%', left: '64%', size: 88, blur: 12, opacity: 0.15, rot: '19deg', dur: '15s' },
-  { top: '31%', left: '84%', size: 132, blur: 9, opacity: 0.21, rot: '-11deg', dur: '21s' },
-  { top: '48%', left: '3%', size: 92, blur: 11, opacity: 0.18, rot: '25deg', dur: '16s' },
-  { top: '52%', left: '22%', size: 116, blur: 9, opacity: 0.2, rot: '-20deg', dur: '18s' },
-  { top: '50%', left: '76%', size: 108, blur: 10, opacity: 0.19, rot: '16deg', dur: '17s' },
-  { top: '56%', left: '92%', size: 82, blur: 12, opacity: 0.16, rot: '-14deg', dur: '15s' },
-  { top: '70%', left: '10%', size: 128, blur: 9, opacity: 0.21, rot: '-9deg', dur: '19s' },
-  { top: '74%', left: '32%', size: 86, blur: 13, opacity: 0.15, rot: '21deg', dur: '16s' },
-  { top: '76%', left: '54%', size: 104, blur: 12, opacity: 0.15, rot: '-17deg', dur: '22s' },
-  { top: '72%', left: '72%', size: 136, blur: 8, opacity: 0.22, rot: '11deg', dur: '18s' },
-  { top: '84%', left: '88%', size: 96, blur: 10, opacity: 0.18, rot: '-22deg', dur: '14s' },
-  { top: '86%', left: '20%', size: 78, blur: 11, opacity: 0.17, rot: '15deg', dur: '17s' },
-  { top: '88%', left: '44%', size: 90, blur: 13, opacity: 0.14, rot: '-6deg', dur: '20s' },
+  { top: '4%', left: '5%', size: 112, blur: 2.5, opacity: 0.22, rot: '-18deg', dur: '15s' },
+  { top: '8%', left: '24%', size: 80, blur: 3.5, opacity: 0.18, rot: '14deg', dur: '18s' },
+  { top: '6%', left: '48%', size: 96, blur: 4.5, opacity: 0.16, rot: '-8deg', dur: '16s' },
+  { top: '5%', left: '72%', size: 124, blur: 3, opacity: 0.2, rot: '22deg', dur: '19s' },
+  { top: '12%', left: '88%', size: 88, blur: 3.5, opacity: 0.18, rot: '-24deg', dur: '14s' },
+  { top: '26%', left: '12%', size: 138, blur: 3, opacity: 0.2, rot: '12deg', dur: '20s' },
+  { top: '28%', left: '34%', size: 76, blur: 5, opacity: 0.16, rot: '-15deg', dur: '17s' },
+  { top: '25%', left: '64%', size: 90, blur: 4, opacity: 0.17, rot: '19deg', dur: '15s' },
+  { top: '31%', left: '84%', size: 132, blur: 3, opacity: 0.22, rot: '-11deg', dur: '21s' },
+  { top: '48%', left: '3%', size: 94, blur: 3.5, opacity: 0.19, rot: '25deg', dur: '16s' },
+  { top: '52%', left: '22%', size: 118, blur: 2.5, opacity: 0.21, rot: '-20deg', dur: '18s' },
+  { top: '50%', left: '76%', size: 110, blur: 3, opacity: 0.2, rot: '16deg', dur: '17s' },
+  { top: '56%', left: '92%', size: 84, blur: 4, opacity: 0.17, rot: '-14deg', dur: '15s' },
+  { top: '70%', left: '10%', size: 128, blur: 2.5, opacity: 0.22, rot: '-9deg', dur: '19s' },
+  { top: '74%', left: '32%', size: 88, blur: 4.5, opacity: 0.16, rot: '21deg', dur: '16s' },
+  { top: '76%', left: '54%', size: 104, blur: 4, opacity: 0.17, rot: '-17deg', dur: '22s' },
+  { top: '72%', left: '72%', size: 136, blur: 2.5, opacity: 0.23, rot: '11deg', dur: '18s' },
+  { top: '84%', left: '88%', size: 98, blur: 3.5, opacity: 0.19, rot: '-22deg', dur: '14s' },
+  { top: '86%', left: '20%', size: 80, blur: 3.5, opacity: 0.18, rot: '15deg', dur: '17s' },
+  { top: '88%', left: '44%', size: 92, blur: 4.5, opacity: 0.16, rot: '-6deg', dur: '20s' },
 ];
 
 function LoginScreen() {
@@ -89,20 +89,20 @@ function LoginScreen() {
       </div>
 
       <div className="card auth-card">
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 24 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 18 }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src="/logo.png"
             alt="SAVT"
             style={{
-              width: 104,
-              height: 104,
+              width: 148,
+              height: 148,
               objectFit: 'contain',
-              marginBottom: 14,
+              marginBottom: 2,
               filter: 'drop-shadow(0 8px 18px rgba(37, 99, 235, 0.18))',
             }}
           />
-          <h1 style={{ fontSize: 20, fontWeight: 700, color: 'var(--dark)' }}>Телефония SAVT</h1>
+          <h1 style={{ fontSize: 20, fontWeight: 700, color: 'var(--dark)', lineHeight: 1.15 }}>Телефония SAVT</h1>
           <p style={{ fontSize: 13, color: 'var(--muted)', marginTop: 4 }}>
             Войдите в панель управления АТС
           </p>
