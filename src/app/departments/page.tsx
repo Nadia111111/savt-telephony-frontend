@@ -11,7 +11,6 @@ import {
 import {
   Users,
   Building,
-  Phone,
   Settings,
   Plus,
   Trash2,
@@ -322,12 +321,6 @@ export default function DepartmentsPage() {
       <div className="subtabs">
         <Link href="/departments" className="subtab active">
           <Building size={18} /> Отделы
-        </Link>
-        <Link href="/settings" className="subtab">
-          <Phone size={18} /> Номера
-        </Link>
-        <Link href="/settings" className="subtab">
-          <Settings size={18} /> Ещё
         </Link>
         <div className="subtabs-right">
           <button className="btn">

@@ -117,7 +117,6 @@ const MOCK_CALLS: CallListItem[] = [
 ];
 
 export default function HistoryPage() {
-  const [topTab, setTopTab] = useState<'external' | 'internal' | 'my'>('external');
   const [typeTab, setTypeTab] = useState<'all' | ActiveTab>('all');
   const [voicemailFilter, setVoicemailFilter] = useState<'all' | 'true' | 'false'>('all');
   const [period, setPeriod] = useState<'month' | 'prev_week' | 'week' | 'prev_month' | 'all'>('month');
@@ -234,25 +233,13 @@ export default function HistoryPage() {
 
   return (
     <div>
-      {/* Верхние табы */}
+      {/* Верхний заголовок-таб */}
       <div className="tabs">
         <button
-          className={`tab ${topTab === 'external' ? 'active' : ''}`}
-          onClick={() => { setTopTab('external'); setPageOffset(0); }}
+          className="tab active"
+          onClick={() => setPageOffset(0)}
         >
           Внешние звонки
-        </button>
-        <button
-          className={`tab ${topTab === 'internal' ? 'active' : ''}`}
-          onClick={() => { setTopTab('internal'); setPageOffset(0); }}
-        >
-          Внутренние звонки
-        </button>
-        <button
-          className={`tab ${topTab === 'my' ? 'active' : ''}`}
-          onClick={() => { setTopTab('my'); setPageOffset(0); }}
-        >
-          Мои звонки
         </button>
       </div>
 
