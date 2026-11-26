@@ -265,7 +265,7 @@ export default function HistoryPage() {
     return groups;
   }, [calls]);
 
-  const totalAllCalls = (counts.incoming || 0) + (counts.missed || 0) + (counts.outgoing || 0);
+  const totalAllCalls = (counts.incoming || 0) + (counts.missed || 0);
 
   return (
     <div>
@@ -355,13 +355,6 @@ export default function HistoryPage() {
               >
                 <ArrowDownRight className="arrow miss" />
                 Пропущенные <span className="num">{counts.missed}</span>
-              </div>
-              <div
-                className={`chip ${typeTab === 'outgoing' ? 'active' : ''}`}
-                onClick={() => { setTypeTab('outgoing'); setPageOffset(0); }}
-              >
-                <ArrowUpRight className="arrow out" />
-                Исходящие <span className="num">{counts.outgoing}</span>
               </div>
             </div>
           </div>
