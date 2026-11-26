@@ -23,6 +23,7 @@ export type CallListItem = {
   outcome: CallOutcome | null;
   answered_by: string | null;
   employee_name?: string | null;
+  employee_number?: string | null;
   initiated_by?: string | null;
   wait_seconds: number | null;
   talk_seconds: number | null;

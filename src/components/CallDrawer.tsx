@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { CallDetail } from '@/types/telephony';
 import { useAudioPlayer } from './AudioPlayerContext';
 import { formatDuration, formatDateTimeFull } from '@/lib/date-utils';
+import { getEmployeeLabel } from '@/lib/departments-filter';
 import { X, Play, Volume2, Bot, MessageSquare, Send, RefreshCw, AlertCircle, CheckCircle2, Clock } from 'lucide-react';
 
 interface CallDrawerProps {
@@ -135,7 +136,7 @@ export default function CallDrawer({ callId, onClose }: CallDrawerProps) {
                 <div>
                   <div style={{ fontSize: 11, color: 'var(--muted)', textTransform: 'uppercase' }}>Сотрудник</div>
                   <div style={{ fontSize: 14, fontWeight: 500, marginTop: 4 }}>
-                    {detail.employee_name || detail.initiated_by || detail.answered_by || '—'}
+                    {getEmployeeLabel(detail)}
                   </div>
                 </div>
                 <div>

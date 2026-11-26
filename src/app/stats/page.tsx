@@ -9,6 +9,7 @@ import {
   CallerStatsResponse,
 } from '@/types/telephony';
 import { getMinskDateRange, formatDateTimeFull } from '@/lib/date-utils';
+import { useDepartmentFilterOptions } from '@/lib/departments-filter';
 import {
   Users,
   AlertCircle,
@@ -173,7 +174,9 @@ export default function StatisticsPage() {
 
   // Общие фильтры. По умолчанию ставим "month" (Текущий месяц), чтобы звонки отображались сразу!
   const [periodPreset, setPeriodPreset] = useState<'month' | 'prev_week' | 'week' | 'prev_month' | 'all'>('month');
-  const [sector, setSector] = useState<string>('all');
+  const [sector, setSector] = useState<string>('');
+
+  const { departmentOptions, departmentsUnavailable } = useDepartmentFilterOptions();
 
   // Управление группировкой
   const [groupBy, setGroupBy] = useState<'day' | 'week' | 'month'>('day');
@@ -213,7 +216,7 @@ export default function StatisticsPage() {
     params.set('date_from', dateRange.dateFrom);
     params.set('date_to', dateRange.dateTo);
     params.set('group_by', groupBy);
-    if (sector !== 'all') {
+    if (sector) {
       params.set('sector', sector);
     }
 
@@ -244,7 +247,7 @@ export default function StatisticsPage() {
     params.set('offset', callersOffset.toString());
     params.set('date_from', dateRange.dateFrom);
     params.set('date_to', dateRange.dateTo);
-    if (sector !== 'all') {
+    if (sector) {
       params.set('sector', sector);
     }
 
@@ -418,13 +421,17 @@ export default function StatisticsPage() {
               value={sector}
               onChange={(e) => handleSectorChange(e.target.value)}
             >
-              <option value="all">Все отделы</option>
-              <option value="1">1: Отдел продаж</option>
-              <option value="2">2: Служба поддержки</option>
-              <option value="3">3: Отдел разработки ПО</option>
-              <option value="4">4: Администрация</option>
-              <option value="5">5: Бухгалтерия</option>
+              {departmentOptions.map((opt) => (
+                <option key={opt.value || 'all'} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
             </select>
+            {departmentsUnavailable && (
+              <span style={{ fontSize: 11, color: 'var(--miss)', marginTop: 4 }}>
+                Справочник отделов недоступен
+              </span>
+            )}
           </div>
 
           {/* Группировка (только для вкладки "Количество звонков") */}

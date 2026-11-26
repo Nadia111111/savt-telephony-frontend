@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { CallListItem, CallCounts, ActiveTab } from '@/types/telephony';
 import { getMinskDateRange, formatDayHeader, formatTime, formatDuration } from '@/lib/date-utils';
+import { useDepartmentFilterOptions, getEmployeeLabel } from '@/lib/departments-filter';
 import { useAudioPlayer } from '@/components/AudioPlayerContext';
 import CallDrawer from '@/components/CallDrawer';
 import { ArrowDownLeft, ArrowUpRight, ArrowDownRight, Play, Volume2, Search, Filter, AlertCircle, RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -120,10 +121,12 @@ export default function HistoryPage() {
   const [typeTab, setTypeTab] = useState<'all' | ActiveTab>('all');
   const [voicemailFilter, setVoicemailFilter] = useState<'all' | 'true' | 'false'>('all');
   const [period, setPeriod] = useState<'month' | 'prev_week' | 'week' | 'prev_month' | 'all'>('month');
-  const [sector, setSector] = useState<string>('all');
+  const [sector, setSector] = useState<string>('');
   const [searchCaller, setSearchCaller] = useState<string>('');
   const [pageOffset, setPageOffset] = useState<number>(0);
   const pageSize = 50;
+
+  const { departmentOptions, departmentsUnavailable } = useDepartmentFilterOptions();
 
   const [calls, setCalls] = useState<CallListItem[]>([]);
   const [total, setTotal] = useState<number>(0);
@@ -162,7 +165,7 @@ export default function HistoryPage() {
     if (currentRange.dateFrom) params.set('date_from', currentRange.dateFrom);
     if (currentRange.dateTo) params.set('date_to', currentRange.dateTo);
 
-    if (sector !== 'all') {
+    if (sector) {
       params.set('sector', sector);
     }
 
@@ -183,7 +186,7 @@ export default function HistoryPage() {
       const countsParams = new URLSearchParams();
       if (currentRange.dateFrom) countsParams.set('date_from', currentRange.dateFrom);
       if (currentRange.dateTo) countsParams.set('date_to', currentRange.dateTo);
-      if (sector !== 'all') countsParams.set('sector', sector);
+      if (sector) countsParams.set('sector', sector);
       if (searchCaller.trim()) countsParams.set('caller', searchCaller.trim());
 
       const countsRes = await fetch(`/api/calls/counts?${countsParams.toString()}`);
@@ -209,7 +212,7 @@ export default function HistoryPage() {
     setPeriod('week');
     setTypeTab('all');
     setVoicemailFilter('all');
-    setSector('all');
+    setSector('');
     setSearchCaller('');
     setPageOffset(0);
   };
@@ -294,13 +297,17 @@ export default function HistoryPage() {
                 setPageOffset(0);
               }}
             >
-              <option value="all">Все отделы</option>
-              <option value="1">1: Отдел продаж</option>
-              <option value="2">2: Служба поддержки</option>
-              <option value="3">3: Отдел разработки ПО</option>
-              <option value="4">4: Администрация</option>
-              <option value="5">5: Бухгалтерия</option>
+              {departmentOptions.map((opt) => (
+                <option key={opt.value || 'all'} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
             </select>
+            {departmentsUnavailable && (
+              <span style={{ fontSize: 11, color: 'var(--miss)', marginTop: 4 }}>
+                Справочник отделов недоступен
+              </span>
+            )}
           </div>
 
           <div className="field">
@@ -423,7 +430,7 @@ export default function HistoryPage() {
                   {dayCalls.map((c) => {
                     const isCallerSelected = currentCall?.id === c.id;
                     const callerDisplay = c.caller || c.caller_raw || 'Не определён';
-                    const employeeDisplay = c.employee_name || c.initiated_by || c.answered_by || '—';
+                    const employeeLabel = getEmployeeLabel(c);
                     const sectorDisplay = c.sector_name || (c.sector ? `Сектор ${c.sector}` : '—');
                     const isIncoming = c.outcome === 'answered' && !c.initiated_by;
                     const isMissed =
@@ -454,7 +461,7 @@ export default function HistoryPage() {
                         </td>
                         <td>
                           <span className="link" onClick={(e) => { e.stopPropagation(); setSelectedCallId(c.id); }}>
-                            {employeeDisplay}
+                            {employeeLabel}
                           </span>
                         </td>
                         <td>{sectorDisplay}</td>
