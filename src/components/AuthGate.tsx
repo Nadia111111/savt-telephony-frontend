@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from './AuthContext';
+import WaterBackground from './WaterBackground';
 import { apiFetch, extractApiError } from '@/lib/api-client';
 import { Lock, User, AlertCircle, CheckCircle2, RefreshCw, X, KeyRound } from 'lucide-react';
 
@@ -87,6 +88,8 @@ function LoginScreen() {
           />
         ))}
       </div>
+
+      <WaterBackground />
 
       <div className="card auth-card">
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 20 }}>
