@@ -75,30 +75,27 @@ export default function WaterBackground() {
     resize();
     window.addEventListener('resize', resize);
 
-    // Subtle initial drops so water feels alive immediately
-    disturb(width * 0.25, height * 0.35, 5, 210);
-    disturb(width * 0.78, height * 0.65, 5, 190);
-
     let lastMoveTime = 0;
+    let lastMoveX = -1000;
+    let lastMoveY = -1000;
+
     const handlePointerDown = (e: PointerEvent) => {
-      disturb(e.clientX, e.clientY, 6, 420);
+      disturb(e.clientX, e.clientY, 6, 340);
     };
 
     const handlePointerMove = (e: PointerEvent) => {
       const now = performance.now();
-      if (now - lastMoveTime < 28) return;
+      const dx = e.clientX - lastMoveX;
+      const dy = e.clientY - lastMoveY;
+      if (now - lastMoveTime < 55 || dx * dx + dy * dy < 196) return;
       lastMoveTime = now;
-      disturb(e.clientX, e.clientY, 3, 110);
+      lastMoveX = e.clientX;
+      lastMoveY = e.clientY;
+      disturb(e.clientX, e.clientY, 2, 32);
     };
 
     window.addEventListener('pointerdown', handlePointerDown);
     window.addEventListener('pointermove', handlePointerMove, { passive: true });
-
-    const ambientInterval = window.setInterval(() => {
-      const rx = width * (0.12 + Math.random() * 0.76);
-      const ry = height * (0.12 + Math.random() * 0.76);
-      disturb(rx, ry, 4, 175);
-    }, 2400);
 
     let animId = 0;
     const step = () => {
@@ -162,7 +159,6 @@ export default function WaterBackground() {
 
     return () => {
       window.cancelAnimationFrame(animId);
-      window.clearInterval(ambientInterval);
       window.removeEventListener('resize', resize);
       window.removeEventListener('pointerdown', handlePointerDown);
       window.removeEventListener('pointermove', handlePointerMove);
