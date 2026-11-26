@@ -1115,3 +1115,50 @@ body {
 .number-card { display: grid; grid-template-columns: 220px 1fr auto; gap: 32px; align-items: center; padding: 22px 20px; }
 .number-main b { font-size: 15px; color: var(--dark); font-weight: 600; font-variant-numeric: tabular-nums; display: block; }
 .number-main span { font-size: 12px; color: var(--muted); }
+
+/* ============ AUTH SCREEN & FLOATING LOGOS ============ */
+.auth-screen {
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at 20% 20%, rgba(37, 99, 235, 0.08), transparent 45%),
+              radial-gradient(circle at 80% 80%, rgba(59, 130, 246, 0.09), transparent 45%),
+              var(--bg);
+  padding: 20px;
+  position: relative;
+  overflow: hidden;
+}
+.auth-bg-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  user-select: none;
+  overflow: hidden;
+  z-index: 0;
+}
+.auth-bg-logo {
+  position: absolute;
+  object-fit: contain;
+  animation: authFloat var(--dur, 14s) ease-in-out infinite alternate;
+  will-change: transform;
+}
+@keyframes authFloat {
+  0% {
+    transform: translate3d(0, 0, 0) rotate(var(--rot, 0deg)) scale(1);
+  }
+  100% {
+    transform: translate3d(12px, -18px, 0) rotate(calc(var(--rot, 0deg) + 8deg)) scale(1.06);
+  }
+}
+.auth-card {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: 420px;
+  margin: 0;
+  padding: 32px 30px;
+  box-shadow: 0 22px 55px rgba(15, 23, 42, 0.14);
+  backdrop-filter: blur(10px);
+}
