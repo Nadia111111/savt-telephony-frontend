@@ -77,7 +77,7 @@ function LoginScreen() {
                 top: item.top,
                 left: item.left,
                 width: item.size,
-                height: item.size,
+                height: 'auto',
                 opacity: item.opacity,
                 filter: `blur(${item.blur}px)`,
                 '--rot': item.rot,
@@ -89,21 +89,21 @@ function LoginScreen() {
       </div>
 
       <div className="card auth-card">
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 18 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 14 }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src="/logo.png"
             alt="SAVT"
             style={{
-              width: 148,
-              height: 148,
-              objectFit: 'contain',
-              marginBottom: 2,
-              filter: 'drop-shadow(0 8px 18px rgba(37, 99, 235, 0.18))',
+              width: 165,
+              height: 'auto',
+              display: 'block',
+              marginBottom: 8,
+              filter: 'drop-shadow(0 6px 14px rgba(37, 99, 235, 0.18))',
             }}
           />
-          <h1 style={{ fontSize: 20, fontWeight: 700, color: 'var(--dark)', lineHeight: 1.15 }}>Телефония SAVT</h1>
-          <p style={{ fontSize: 13, color: 'var(--muted)', marginTop: 4 }}>
+          <h1 style={{ fontSize: 18, fontWeight: 700, color: 'var(--dark)', lineHeight: 1.15 }}>Телефония SAVT</h1>
+          <p style={{ fontSize: 12, color: 'var(--muted)', marginTop: 2 }}>
             Войдите в панель управления АТС
           </p>
         </div>
@@ -180,13 +180,13 @@ function LoginScreen() {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 11 }}>
           <div>
-            <label style={{ display: 'block', fontSize: 12, fontWeight: 500, color: 'var(--muted)', marginBottom: 6 }}>
+            <label style={{ display: 'block', fontSize: 12, fontWeight: 500, color: 'var(--muted)', marginBottom: 4 }}>
               Логин
             </label>
             <div style={{ position: 'relative' }}>
-              <User size={16} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--muted)' }} />
+              <User size={15} style={{ position: 'absolute', left: 11, top: '50%', transform: 'translateY(-50%)', color: 'var(--muted)' }} />
               <input
                 type="text"
                 autoComplete="username"
@@ -196,7 +196,7 @@ function LoginScreen() {
                 placeholder="Введите логин"
                 style={{
                   width: '100%',
-                  padding: '10px 12px 10px 36px',
+                  padding: '8px 12px 8px 34px',
                   borderRadius: 8,
                   border: '1px solid var(--border)',
                   background: 'var(--card)',
@@ -208,11 +208,11 @@ function LoginScreen() {
           </div>
 
           <div>
-            <label style={{ display: 'block', fontSize: 12, fontWeight: 500, color: 'var(--muted)', marginBottom: 6 }}>
+            <label style={{ display: 'block', fontSize: 12, fontWeight: 500, color: 'var(--muted)', marginBottom: 4 }}>
               Пароль
             </label>
             <div style={{ position: 'relative' }}>
-              <Lock size={16} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--muted)' }} />
+              <Lock size={15} style={{ position: 'absolute', left: 11, top: '50%', transform: 'translateY(-50%)', color: 'var(--muted)' }} />
               <input
                 type="password"
                 autoComplete="current-password"
@@ -222,7 +222,7 @@ function LoginScreen() {
                 placeholder="Введите пароль"
                 style={{
                   width: '100%',
-                  padding: '10px 12px 10px 36px',
+                  padding: '8px 12px 8px 34px',
                   borderRadius: 8,
                   border: '1px solid var(--border)',
                   background: 'var(--card)',
@@ -237,7 +237,7 @@ function LoginScreen() {
             type="submit"
             className="btn btn-primary"
             disabled={submitting || retryCountdown > 0}
-            style={{ width: '100%', justifyContent: 'center', padding: '11px', marginTop: 4 }}
+            style={{ width: '100%', justifyContent: 'center', padding: '9px', marginTop: 4 }}
           >
             {submitting ? (
               <>
