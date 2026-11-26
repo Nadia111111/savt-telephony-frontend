@@ -11,9 +11,11 @@ export async function GET(
   const forwardHeaders: HeadersInit = {};
   const range = request.headers.get('range');
   const ifRange = request.headers.get('if-range');
+  const cookie = request.headers.get('cookie');
 
   if (range) forwardHeaders['range'] = range;
   if (ifRange) forwardHeaders['if-range'] = ifRange;
+  if (cookie) forwardHeaders['cookie'] = cookie;
 
   try {
     const backendRes = await fetch(backendUrl, {

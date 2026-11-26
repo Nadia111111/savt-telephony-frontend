@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { CallListItem, CallCounts, ActiveTab } from '@/types/telephony';
 import { getMinskDateRange, formatDayHeader, formatTime, formatDuration } from '@/lib/date-utils';
 import { useDepartmentFilterOptions, getEmployeeLabel } from '@/lib/departments-filter';
+import { apiFetch, extractApiError } from '@/lib/api-client';
 import { useAudioPlayer } from '@/components/AudioPlayerContext';
 import CallDrawer from '@/components/CallDrawer';
 import { ArrowDownLeft, ArrowUpRight, ArrowDownRight, Play, Volume2, Search, Filter, AlertCircle, RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -122,10 +123,24 @@ export default function HistoryPage() {
   const [period, setPeriod] = useState<'month' | 'prev_week' | 'week' | 'prev_month' | 'all'>('month');
   const [sector, setSector] = useState<string>('');
   const [searchCaller, setSearchCaller] = useState<string>('');
+  const [debouncedCaller, setDebouncedCaller] = useState<string>('');
   const [pageOffset, setPageOffset] = useState<number>(0);
   const pageSize = 50;
+  const abortRef = useRef<AbortController | null>(null);
 
   const { departmentOptions, departmentsUnavailable } = useDepartmentFilterOptions();
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedCaller(searchCaller.trim());
+      setPageOffset(0);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchCaller]);
+
+  useEffect(() => {
+    return () => abortRef.current?.abort();
+  }, []);
 
   const [calls, setCalls] = useState<CallListItem[]>([]);
   const [total, setTotal] = useState<number>(0);
@@ -147,6 +162,10 @@ export default function HistoryPage() {
   }, [period]);
 
   const fetchCalls = useCallback(async () => {
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
     setLoading(true);
     setBackendError(null);
 
@@ -168,14 +187,24 @@ export default function HistoryPage() {
       params.set('sector', sector);
     }
 
-    if (searchCaller.trim()) {
-      params.set('caller', searchCaller.trim());
+    if (debouncedCaller) {
+      params.set('caller', debouncedCaller);
+    } else {
+      params.delete('caller');
     }
 
     try {
-      const res = await fetch(`/api/calls?${params.toString()}`);
+      const res = await apiFetch(`/api/calls?${params.toString()}`, {
+        signal: controller.signal,
+      });
+      if (res.status === 403) {
+        setBackendError('Нет доступа к журналу звонков');
+        setCalls([]);
+        setTotal(0);
+        return;
+      }
       if (!res.ok) {
-        throw new Error(`Ошибка загрузки звонков (${res.status})`);
+        throw new Error(await extractApiError(res, `Ошибка загрузки звонков (${res.status})`));
       }
       const data = await res.json();
       setCalls(data.items || []);
@@ -186,22 +215,28 @@ export default function HistoryPage() {
       if (currentRange.dateFrom) countsParams.set('date_from', currentRange.dateFrom);
       if (currentRange.dateTo) countsParams.set('date_to', currentRange.dateTo);
       if (sector) countsParams.set('sector', sector);
-      if (searchCaller.trim()) countsParams.set('caller', searchCaller.trim());
+      if (debouncedCaller) countsParams.set('caller', debouncedCaller);
+      else countsParams.delete('caller');
 
-      const countsRes = await fetch(`/api/calls/counts?${countsParams.toString()}`);
+      const countsRes = await apiFetch(`/api/calls/counts?${countsParams.toString()}`, {
+        signal: controller.signal,
+      });
       if (countsRes.ok) {
         const countsData = await countsRes.json();
         setCounts(countsData);
       }
     } catch (err: any) {
+      if (err?.name === 'AbortError') return;
       setBackendError(err.message || 'Бэкенд недоступен');
       // В качестве мягкого fallback показываем моковые данные
       setCalls(MOCK_CALLS);
       setTotal(MOCK_CALLS.length);
     } finally {
-      setLoading(false);
+      if (abortRef.current === controller) {
+        setLoading(false);
+      }
     }
-  }, [typeTab, voicemailFilter, currentRange, sector, searchCaller, pageOffset]);
+  }, [typeTab, voicemailFilter, currentRange, sector, debouncedCaller, pageOffset]);
 
   useEffect(() => {
     fetchCalls();
@@ -213,6 +248,7 @@ export default function HistoryPage() {
     setVoicemailFilter('all');
     setSector('');
     setSearchCaller('');
+    setDebouncedCaller('');
     setPageOffset(0);
   };
 
@@ -365,8 +401,8 @@ export default function HistoryPage() {
                 onChange={(e) => setSearchCaller(e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
+                    setDebouncedCaller(searchCaller.trim());
                     setPageOffset(0);
-                    fetchCalls();
                   }
                 }}
               />

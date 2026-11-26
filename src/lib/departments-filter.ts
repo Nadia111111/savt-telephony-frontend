@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { DepartmentsResponse } from '@/types/telephony';
+import { apiFetch } from '@/lib/api-client';
 
 export type DepartmentFilterOption = {
   label: string;
@@ -27,7 +28,7 @@ export function useDepartmentFilterOptions() {
 
     async function loadDepartments() {
       try {
-        const res = await fetch('/api/departments');
+        const res = await apiFetch('/api/departments');
         if (!res.ok) {
           throw new Error(`HTTP ${res.status}`);
         }

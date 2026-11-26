@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import { ThemeProvider } from '@/lib/theme-context';
+import { AuthProvider } from '@/components/AuthContext';
+import AuthGate from '@/components/AuthGate';
 import { AudioPlayerProvider } from '@/components/AudioPlayerContext';
 import Sidebar from '@/components/Sidebar';
 import Topbar from '@/components/Topbar';
@@ -20,14 +22,18 @@ export default function RootLayout({
     <html lang="ru">
       <body>
         <ThemeProvider>
-          <AudioPlayerProvider>
-            <Sidebar />
-            <div className="main-wrapper">
-              <Topbar />
-              <main className="content-area">{children}</main>
-              <Player />
-            </div>
-          </AudioPlayerProvider>
+          <AuthProvider>
+            <AuthGate>
+              <AudioPlayerProvider>
+                <Sidebar />
+                <div className="main-wrapper">
+                  <Topbar />
+                  <main className="content-area">{children}</main>
+                  <Player />
+                </div>
+              </AudioPlayerProvider>
+            </AuthGate>
+          </AuthProvider>
         </ThemeProvider>
       </body>
     </html>

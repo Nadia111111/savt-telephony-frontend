@@ -3,6 +3,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { TelephonySettings, DayOfWeek } from '@/types/telephony';
+import { useAuth } from '@/components/AuthContext';
+import { apiFetch, extractApiError } from '@/lib/api-client';
 import {
   Building,
   Phone,
@@ -15,10 +17,9 @@ import {
   CheckCircle2,
   AlertCircle,
   Sliders,
-  PhoneCall,
   Voicemail,
   ShieldCheck,
-  Info,
+  Lock,
 } from 'lucide-react';
 
 const DAYS: { key: DayOfWeek; label: string; full: string }[] = [
@@ -53,6 +54,9 @@ const SECTORS = [
 ];
 
 export default function SettingsPage() {
+  const { hasRole } = useAuth();
+  const canManage = hasRole('manager', 'admin');
+
   const [settings, setSettings] = useState<TelephonySettings>(DEFAULT_SETTINGS);
   const [holidays, setHolidays] = useState<string[]>([]);
   const [newHolidayDate, setNewHolidayDate] = useState<string>('');
@@ -70,10 +74,15 @@ export default function SettingsPage() {
 
   // Загрузка настроек телефонии
   const fetchSettings = useCallback(async () => {
+    if (!canManage) return;
     setLoading(true);
     setSettingsError(null);
     try {
-      const res = await fetch('/api/settings/telephony');
+      const res = await apiFetch('/api/settings/telephony');
+      if (res.status === 403) {
+        setSettingsError('Нет доступа к настройкам АТС');
+        return;
+      }
       if (!res.ok) {
         throw new Error(`Статус ${res.status}`);
       }
@@ -85,14 +94,19 @@ export default function SettingsPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [canManage]);
 
   // Загрузка праздничных дат
   const fetchHolidays = useCallback(async () => {
+    if (!canManage) return;
     setLoadingHolidays(true);
     setHolidaysError(null);
     try {
-      const res = await fetch('/api/settings/holidays');
+      const res = await apiFetch('/api/settings/holidays');
+      if (res.status === 403) {
+        setHolidaysError('Нет доступа к календарю праздников');
+        return;
+      }
       if (!res.ok) {
         throw new Error(`Статус ${res.status}`);
       }
@@ -103,12 +117,13 @@ export default function SettingsPage() {
     } finally {
       setLoadingHolidays(false);
     }
-  }, []);
+  }, [canManage]);
 
   useEffect(() => {
+    if (!canManage) return;
     fetchSettings();
     fetchHolidays();
-  }, [fetchSettings, fetchHolidays]);
+  }, [canManage, fetchSettings, fetchHolidays]);
 
   // Переключение дня недели
   const toggleDay = (day: DayOfWeek) => {
@@ -129,23 +144,17 @@ export default function SettingsPage() {
     setSettingsSuccess(null);
 
     try {
-      const res = await fetch('/api/settings/telephony', {
+      const res = await apiFetch('/api/settings/telephony', {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(settings),
       });
 
+      if (res.status === 403) {
+        throw new Error('Нет доступа для изменения настроек АТС');
+      }
+
       if (!res.ok) {
-        let errorMsg = `Ошибка сервера (${res.status})`;
-        try {
-          const errData = await res.json();
-          if (typeof errData.detail === 'string') {
-            errorMsg = errData.detail;
-          } else if (Array.isArray(errData.detail)) {
-            errorMsg = errData.detail.map((d: any) => d.msg || JSON.stringify(d)).join('; ');
-          }
-        } catch {}
-        throw new Error(errorMsg);
+        throw new Error(await extractApiError(res, `Ошибка сервера (${res.status})`));
       }
 
       const savedData: TelephonySettings = await res.json();
@@ -174,9 +183,14 @@ export default function SettingsPage() {
     setHolidaysSuccess(null);
 
     try {
-      const res = await fetch(`/api/settings/holidays/${newHolidayDate}`, {
+      const res = await apiFetch(`/api/settings/holidays/${newHolidayDate}`, {
         method: 'PUT',
       });
+
+      if (res.status === 403) {
+        setHolidaysError('Нет доступа для изменения праздничных дат');
+        return;
+      }
 
       if (res.status === 204 || res.ok) {
         setHolidaysSuccess(`Праздничная дата ${newHolidayDate} добавлена`);
@@ -184,7 +198,7 @@ export default function SettingsPage() {
         fetchHolidays();
         setTimeout(() => setHolidaysSuccess(null), 4000);
       } else {
-        throw new Error(`Ошибка добавления даты (${res.status})`);
+        setHolidaysError(await extractApiError(res, `Ошибка добавления даты (${res.status})`));
       }
     } catch {
       // Fallback для оффлайн/демо режима
@@ -205,14 +219,19 @@ export default function SettingsPage() {
     setHolidaysError(null);
 
     try {
-      const res = await fetch(`/api/settings/holidays/${date}`, {
+      const res = await apiFetch(`/api/settings/holidays/${date}`, {
         method: 'DELETE',
       });
+
+      if (res.status === 403) {
+        setHolidaysError('Нет доступа для удаления праздничных дат');
+        return;
+      }
 
       if (res.status === 204 || res.ok) {
         fetchHolidays();
       } else {
-        throw new Error(`Ошибка удаления (${res.status})`);
+        setHolidaysError(await extractApiError(res, `Ошибка удаления (${res.status})`));
       }
     } catch {
       setHolidays((prev) => prev.filter((d) => d !== date));
@@ -234,6 +253,20 @@ export default function SettingsPage() {
       return dateStr;
     }
   };
+
+  if (!canManage) {
+    return (
+      <div className="card" style={{ padding: 32, textAlign: 'center' }}>
+        <Lock size={32} style={{ color: 'var(--miss)', margin: '0 auto 12px' }} />
+        <h2 style={{ fontSize: 16, fontWeight: 600, color: 'var(--dark)', marginBottom: 6 }}>
+          Доступ запрещён
+        </h2>
+        <p style={{ fontSize: 13, color: 'var(--muted)' }}>
+          Управление настройками АТС и календарём праздников доступно только ролям <b>manager</b> и <b>admin</b>.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div>

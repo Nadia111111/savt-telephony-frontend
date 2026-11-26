@@ -5,6 +5,7 @@ import { CallDetail } from '@/types/telephony';
 import { useAudioPlayer } from './AudioPlayerContext';
 import { formatDuration, formatDateTimeFull } from '@/lib/date-utils';
 import { getEmployeeLabel } from '@/lib/departments-filter';
+import { apiFetch, extractApiError } from '@/lib/api-client';
 import { X, Play, Volume2, Bot, MessageSquare, Send, RefreshCw, AlertCircle, CheckCircle2, Clock } from 'lucide-react';
 
 interface CallDrawerProps {
@@ -20,12 +21,15 @@ export default function CallDrawer({ callId, onClose }: CallDrawerProps) {
 
   const fetchCallDetail = async (id: number) => {
     try {
-      const res = await fetch(`/api/calls/${id}`);
+      const res = await apiFetch(`/api/calls/${id}`);
       if (!res.ok) {
         if (res.status === 404) {
           throw new Error('Звонок не найден в базе');
         }
-        throw new Error(`Ошибка сервера (${res.status})`);
+        if (res.status === 403) {
+          throw new Error('Нет доступа к просмотру карточки звонка');
+        }
+        throw new Error(await extractApiError(res, `Ошибка сервера (${res.status})`));
       }
       const data: CallDetail = await res.json();
       setDetail(data);

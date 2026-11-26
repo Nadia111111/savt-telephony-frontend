@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   StatisticsTotals,
   StatisticsBucket,
@@ -10,6 +10,7 @@ import {
 } from '@/types/telephony';
 import { getMinskDateRange, formatDateTimeFull } from '@/lib/date-utils';
 import { useDepartmentFilterOptions } from '@/lib/departments-filter';
+import { apiFetch, extractApiError } from '@/lib/api-client';
 import {
   Users,
   AlertCircle,
@@ -20,6 +21,7 @@ import {
   PhoneMissed,
   PhoneOutgoing,
   PhoneCall,
+  Search,
 } from 'lucide-react';
 
 type SliceKey = 'incoming' | 'missed' | 'outgoing';
@@ -175,8 +177,23 @@ export default function StatisticsPage() {
   // Общие фильтры. По умолчанию ставим "month" (Текущий месяц), чтобы звонки отображались сразу!
   const [periodPreset, setPeriodPreset] = useState<'month' | 'prev_week' | 'week' | 'prev_month' | 'all'>('month');
   const [sector, setSector] = useState<string>('');
+  const [searchCaller, setSearchCaller] = useState<string>('');
+  const [debouncedCaller, setDebouncedCaller] = useState<string>('');
+  const abortRef = useRef<AbortController | null>(null);
 
   const { departmentOptions, departmentsUnavailable } = useDepartmentFilterOptions();
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedCaller(searchCaller.trim());
+      setCallersOffset(0);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchCaller]);
+
+  useEffect(() => {
+    return () => abortRef.current?.abort();
+  }, []);
 
   // Управление группировкой
   const [groupBy, setGroupBy] = useState<'day' | 'week' | 'month'>('day');
@@ -209,6 +226,10 @@ export default function StatisticsPage() {
 
   // Загрузка статистики количества звонков
   const fetchCallsStats = useCallback(async () => {
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
     setLoading(true);
     setBackendError(null);
 
@@ -219,11 +240,22 @@ export default function StatisticsPage() {
     if (sector) {
       params.set('sector', sector);
     }
+    if (debouncedCaller) {
+      params.set('caller', debouncedCaller);
+    } else {
+      params.delete('caller');
+    }
 
     try {
-      const res = await fetch(`/api/statistics/calls?${params.toString()}`);
+      const res = await apiFetch(`/api/statistics/calls?${params.toString()}`, {
+        signal: controller.signal,
+      });
+      if (res.status === 403) {
+        setBackendError('Нет доступа к просмотру статистики');
+        return;
+      }
       if (!res.ok) {
-        throw new Error(`Ошибка загрузки статистики звонков (${res.status})`);
+        throw new Error(await extractApiError(res, `Ошибка загрузки статистики звонков (${res.status})`));
       }
       const data: StatisticsCallsResponse = await res.json();
       setCallsData({
@@ -231,14 +263,21 @@ export default function StatisticsPage() {
         buckets: data.buckets || [],
       });
     } catch (err: any) {
+      if (err?.name === 'AbortError') return;
       setBackendError(err.message || 'Сервер телефонии не отвечает');
     } finally {
-      setLoading(false);
+      if (abortRef.current === controller) {
+        setLoading(false);
+      }
     }
-  }, [dateRange, groupBy, sector]);
+  }, [dateRange, groupBy, sector, debouncedCaller]);
 
   // Загрузка статистики по номерам клиентов
   const fetchCallersStats = useCallback(async () => {
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
     setLoading(true);
     setBackendError(null);
 
@@ -250,11 +289,22 @@ export default function StatisticsPage() {
     if (sector) {
       params.set('sector', sector);
     }
+    if (debouncedCaller) {
+      params.set('caller', debouncedCaller);
+    } else {
+      params.delete('caller');
+    }
 
     try {
-      const res = await fetch(`/api/statistics/callers?${params.toString()}`);
+      const res = await apiFetch(`/api/statistics/callers?${params.toString()}`, {
+        signal: controller.signal,
+      });
+      if (res.status === 403) {
+        setBackendError('Нет доступа к статистике по номерам');
+        return;
+      }
       if (!res.ok) {
-        throw new Error(`Ошибка загрузки номеров клиентов (${res.status})`);
+        throw new Error(await extractApiError(res, `Ошибка загрузки номеров клиентов (${res.status})`));
       }
       const data: CallerStatsResponse = await res.json();
       setCallersData({
@@ -262,11 +312,14 @@ export default function StatisticsPage() {
         total: data.total || 0,
       });
     } catch (err: any) {
+      if (err?.name === 'AbortError') return;
       setBackendError(err.message || 'Сервер телефонии не отвечает');
     } finally {
-      setLoading(false);
+      if (abortRef.current === controller) {
+        setLoading(false);
+      }
     }
-  }, [dateRange, sector, callersOffset]);
+  }, [dateRange, sector, debouncedCaller, callersOffset]);
 
   useEffect(() => {
     if (tab === 'calls') {
@@ -432,6 +485,25 @@ export default function StatisticsPage() {
                 Справочник отделов недоступен
               </span>
             )}
+          </div>
+
+          {/* Поиск по номеру */}
+          <div className="field">
+            <label>Поиск по номеру</label>
+            <div className="search" style={{ marginLeft: 0 }}>
+              <input
+                placeholder="Номер или часть..."
+                value={searchCaller}
+                onChange={(e) => setSearchCaller(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    setDebouncedCaller(searchCaller.trim());
+                    setCallersOffset(0);
+                  }
+                }}
+              />
+              <Search size={16} />
+            </div>
           </div>
 
           {/* Группировка (только для вкладки "Количество звонков") */}

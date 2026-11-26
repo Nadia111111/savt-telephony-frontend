@@ -91,6 +91,23 @@ export type HealthStatus = {
   ami: 'connected' | 'disconnected' | 'disabled';
 };
 
+/* ============ АВТОРИЗАЦИЯ И ПОЛЬЗОВАТЕЛИ ============ */
+export type UserRole = 'viewer' | 'manager' | 'admin';
+
+export type AuthUser = {
+  id: number;
+  username: string;
+  role: UserRole;
+  is_active?: boolean;
+  created_at?: string;
+  updated_at?: string;
+};
+
+export type UsersPage = {
+  items: AuthUser[];
+  total: number;
+};
+
 export type ActiveTab = 'incoming' | 'outgoing' | 'missed';
 
 /* ============ СТАТИСТИКА (API Контракт) ============ */

@@ -2,6 +2,8 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import { useAuth } from '@/components/AuthContext';
+import { apiFetch, extractApiError } from '@/lib/api-client';
 import {
   DepartmentListItem,
   DepartmentDetail,
@@ -21,6 +23,7 @@ import {
   Save,
   CheckCircle2,
   AlertTriangle,
+  Lock,
 } from 'lucide-react';
 
 const MOCK_DEPARTMENTS: DepartmentListItem[] = [
@@ -109,6 +112,9 @@ const MOCK_SECTORS = [
 ];
 
 export default function DepartmentsPage() {
+  const { hasRole } = useAuth();
+  const canManage = hasRole('manager', 'admin');
+
   const [departments, setDepartments] = useState<DepartmentListItem[]>(MOCK_DEPARTMENTS);
   const [sectors, setSectors] = useState<any[]>(MOCK_SECTORS);
   const [settingsAvailable, setSettingsAvailable] = useState<boolean>(true);
@@ -132,8 +138,14 @@ export default function DepartmentsPage() {
 
   // Загрузка списка отделов
   const fetchDepartments = useCallback(async () => {
+    if (!canManage) return;
     try {
-      const res = await fetch('/api/departments');
+      const res = await apiFetch('/api/departments');
+      if (res.status === 403) {
+        setBackendError('Нет доступа: раздел доступен только ролям manager и admin');
+        setSettingsAvailable(false);
+        return;
+      }
       if (!res.ok) {
         throw new Error(`Статус ответа ${res.status}`);
       }
@@ -151,14 +163,15 @@ export default function DepartmentsPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [canManage]);
 
   useEffect(() => {
+    if (!canManage) return;
     fetchDepartments();
     // Фоновое обновление статуса звонков каждые 15 секунд
     const interval = setInterval(fetchDepartments, 15000);
     return () => clearInterval(interval);
-  }, [fetchDepartments]);
+  }, [canManage, fetchDepartments]);
 
   // Загрузка детальной карточки отдела
   const openDepartmentCard = async (id: number) => {
@@ -168,7 +181,11 @@ export default function DepartmentsPage() {
     setFormSuccess(null);
 
     try {
-      const res = await fetch(`/api/departments/${id}`);
+      const res = await apiFetch(`/api/departments/${id}`);
+      if (res.status === 403) {
+        setFormError('Нет доступа к карточке отдела');
+        return;
+      }
       if (!res.ok) throw new Error('Ошибка загрузки данных отдела');
       const data: DepartmentDetail = await res.json();
       setDeptDetail(data);
@@ -249,19 +266,21 @@ export default function DepartmentsPage() {
     };
 
     try {
-      const res = await fetch(`/api/departments/${selectedDeptId}/settings`, {
+      const res = await apiFetch(`/api/departments/${selectedDeptId}/settings`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       });
 
+      if (res.status === 403) {
+        setFormError('Нет доступа для изменения маршрутов');
+        return;
+      }
       if (res.status === 409) {
-        setFormError('Сектор уже привязан к другому отделу');
+        setFormError(await extractApiError(res, 'Сектор уже привязан к другому отделу'));
         return;
       }
       if (res.status === 422) {
-        const err = await res.json();
-        setFormError(err.detail ? JSON.stringify(err.detail) : 'Ошибка валидации полей');
+        setFormError(await extractApiError(res, 'Ошибка валидации полей'));
         return;
       }
       if (res.status === 502) {
@@ -294,9 +313,13 @@ export default function DepartmentsPage() {
     setFormError(null);
 
     try {
-      const res = await fetch(`/api/departments/${selectedDeptId}/settings`, {
+      const res = await apiFetch(`/api/departments/${selectedDeptId}/settings`, {
         method: 'DELETE',
       });
+      if (res.status === 403) {
+        setFormError('Нет доступа для снятия привязки');
+        return;
+      }
       if (res.status === 204 || res.ok) {
         setFormSuccess('Привязка к станции Asterisk успешно снята');
         fetchDepartments();
@@ -314,6 +337,20 @@ export default function DepartmentsPage() {
       setSaving(false);
     }
   };
+
+  if (!canManage) {
+    return (
+      <div className="card" style={{ padding: 32, textAlign: 'center' }}>
+        <Lock size={32} style={{ color: 'var(--miss)', margin: '0 auto 12px' }} />
+        <h2 style={{ fontSize: 16, fontWeight: 600, color: 'var(--dark)', marginBottom: 6 }}>
+          Доступ запрещён
+        </h2>
+        <p style={{ fontSize: 13, color: 'var(--muted)' }}>
+          Управление отделами и маршрутами доступно только пользователям с ролью <b>manager</b> или <b>admin</b>.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div>

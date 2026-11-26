@@ -13,6 +13,18 @@ const nextConfig = {
         source: '/health',
         destination: `${backendUrl}/health`,
       },
+      {
+        source: '/docs',
+        destination: `${backendUrl}/docs`,
+      },
+      {
+        source: '/redoc',
+        destination: `${backendUrl}/redoc`,
+      },
+      {
+        source: '/openapi.json',
+        destination: `${backendUrl}/openapi.json`,
+      },
     ];
   },
 };

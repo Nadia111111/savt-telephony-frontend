@@ -3,12 +3,20 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { usePathname } from 'next/navigation';
 import { useTheme } from '@/lib/theme-context';
-import { HealthStatus } from '@/types/telephony';
-import { Sun, Moon, LogOut, RefreshCw } from 'lucide-react';
+import { useAuth } from './AuthContext';
+import { HealthStatus, UserRole } from '@/types/telephony';
+import { Sun, Moon, LogOut, RefreshCw, KeyRound } from 'lucide-react';
+
+const ROLE_LABELS: Record<UserRole, string> = {
+  viewer: 'Наблюдатель',
+  manager: 'Менеджер',
+  admin: 'Администратор',
+};
 
 export default function Topbar() {
   const pathname = usePathname();
   const { theme, toggleTheme } = useTheme();
+  const { user, logout, openChangePassword } = useAuth();
 
   const [health, setHealth] = useState<HealthStatus | null>(null);
   const [healthLoading, setHealthLoading] = useState<boolean>(true);
@@ -18,7 +26,7 @@ export default function Topbar() {
   const fetchHealth = useCallback(async (manual = false) => {
     if (manual) setIsRefreshing(true);
     try {
-      const res = await fetch('/health');
+      const res = await fetch('/health', { credentials: 'same-origin' });
       if (res.status === 200 || res.status === 503) {
         const data = await res.json();
         setHealth(data);
@@ -36,7 +44,6 @@ export default function Topbar() {
 
   useEffect(() => {
     fetchHealth();
-    // Опрос состояния каждые 10 секунд по гайду
     const interval = setInterval(() => {
       fetchHealth();
     }, 10000);
@@ -53,6 +60,8 @@ export default function Topbar() {
         return 'Отделы';
       case '/settings':
         return 'Настройки';
+      case '/users':
+        return 'Пользователи';
       default:
         return 'Телефония';
     }
@@ -110,6 +119,10 @@ export default function Topbar() {
     );
   };
 
+  const initials = user?.username
+    ? user.username.slice(0, 2).toUpperCase()
+    : 'U';
+
   return (
     <header className="topbar">
       <div className="crumbs">
@@ -132,9 +145,29 @@ export default function Topbar() {
         </button>
 
         <div className="user-profile">
-          <span>Надежда Фролова</span>
-          <div className="avatar" title="Надежда Фролова">НФ</div>
-          <button className="theme-toggle" title="Выйти" style={{ width: 32, height: 32 }}>
+          <div style={{ textAlign: 'right', lineHeight: 1.2 }}>
+            <div style={{ fontWeight: 600, color: 'var(--dark)' }}>{user?.username || '—'}</div>
+            {user?.role && (
+              <div style={{ fontSize: 11, color: 'var(--muted)' }}>{ROLE_LABELS[user.role] || user.role}</div>
+            )}
+          </div>
+          <div className="avatar" title={user ? `${user.username} (${ROLE_LABELS[user.role]})` : ''}>
+            {initials}
+          </div>
+          <button
+            className="theme-toggle"
+            title="Сменить пароль"
+            onClick={openChangePassword}
+            style={{ width: 32, height: 32 }}
+          >
+            <KeyRound size={15} />
+          </button>
+          <button
+            className="theme-toggle"
+            title="Выйти"
+            onClick={logout}
+            style={{ width: 32, height: 32 }}
+          >
             <LogOut size={16} />
           </button>
         </div>
