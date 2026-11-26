@@ -6,26 +6,26 @@ import { apiFetch, extractApiError } from '@/lib/api-client';
 import { Lock, User, AlertCircle, CheckCircle2, RefreshCw, X, KeyRound } from 'lucide-react';
 
 const BG_LOGOS = [
-  { top: '4%', left: '5%', size: 112, blur: 2.5, opacity: 0.22, rot: '-18deg', dur: '15s' },
-  { top: '8%', left: '24%', size: 80, blur: 3.5, opacity: 0.18, rot: '14deg', dur: '18s' },
-  { top: '6%', left: '48%', size: 96, blur: 4.5, opacity: 0.16, rot: '-8deg', dur: '16s' },
-  { top: '5%', left: '72%', size: 124, blur: 3, opacity: 0.2, rot: '22deg', dur: '19s' },
-  { top: '12%', left: '88%', size: 88, blur: 3.5, opacity: 0.18, rot: '-24deg', dur: '14s' },
-  { top: '26%', left: '12%', size: 138, blur: 3, opacity: 0.2, rot: '12deg', dur: '20s' },
-  { top: '28%', left: '34%', size: 76, blur: 5, opacity: 0.16, rot: '-15deg', dur: '17s' },
-  { top: '25%', left: '64%', size: 90, blur: 4, opacity: 0.17, rot: '19deg', dur: '15s' },
-  { top: '31%', left: '84%', size: 132, blur: 3, opacity: 0.22, rot: '-11deg', dur: '21s' },
-  { top: '48%', left: '3%', size: 94, blur: 3.5, opacity: 0.19, rot: '25deg', dur: '16s' },
-  { top: '52%', left: '22%', size: 118, blur: 2.5, opacity: 0.21, rot: '-20deg', dur: '18s' },
-  { top: '50%', left: '76%', size: 110, blur: 3, opacity: 0.2, rot: '16deg', dur: '17s' },
-  { top: '56%', left: '92%', size: 84, blur: 4, opacity: 0.17, rot: '-14deg', dur: '15s' },
-  { top: '70%', left: '10%', size: 128, blur: 2.5, opacity: 0.22, rot: '-9deg', dur: '19s' },
-  { top: '74%', left: '32%', size: 88, blur: 4.5, opacity: 0.16, rot: '21deg', dur: '16s' },
-  { top: '76%', left: '54%', size: 104, blur: 4, opacity: 0.17, rot: '-17deg', dur: '22s' },
-  { top: '72%', left: '72%', size: 136, blur: 2.5, opacity: 0.23, rot: '11deg', dur: '18s' },
-  { top: '84%', left: '88%', size: 98, blur: 3.5, opacity: 0.19, rot: '-22deg', dur: '14s' },
-  { top: '86%', left: '20%', size: 80, blur: 3.5, opacity: 0.18, rot: '15deg', dur: '17s' },
-  { top: '88%', left: '44%', size: 92, blur: 4.5, opacity: 0.16, rot: '-6deg', dur: '20s' },
+  { top: '5%', left: '5%', size: 118, blur: 2, opacity: 0.26, rot: '-18deg', dur: '15s' },
+  { top: '9%', left: '25%', size: 86, blur: 3, opacity: 0.22, rot: '14deg', dur: '18s' },
+  { top: '7%', left: '47%', size: 102, blur: 3.5, opacity: 0.2, rot: '-8deg', dur: '16s' },
+  { top: '6%', left: '70%', size: 126, blur: 2.5, opacity: 0.24, rot: '22deg', dur: '19s' },
+  { top: '14%', left: '87%', size: 94, blur: 3, opacity: 0.22, rot: '-24deg', dur: '14s' },
+  { top: '26%', left: '10%', size: 142, blur: 2.5, opacity: 0.24, rot: '12deg', dur: '20s' },
+  { top: '27%', left: '33%', size: 84, blur: 3.5, opacity: 0.2, rot: '-15deg', dur: '17s' },
+  { top: '25%', left: '63%', size: 96, blur: 3, opacity: 0.21, rot: '19deg', dur: '15s' },
+  { top: '32%', left: '83%', size: 136, blur: 2.5, opacity: 0.25, rot: '-11deg', dur: '21s' },
+  { top: '48%', left: '3%', size: 100, blur: 3, opacity: 0.22, rot: '25deg', dur: '16s' },
+  { top: '50%', left: '22%', size: 122, blur: 2, opacity: 0.25, rot: '-20deg', dur: '18s' },
+  { top: '49%', left: '74%', size: 116, blur: 2.5, opacity: 0.24, rot: '16deg', dur: '17s' },
+  { top: '57%', left: '90%', size: 90, blur: 3.5, opacity: 0.2, rot: '-14deg', dur: '15s' },
+  { top: '70%', left: '9%', size: 134, blur: 2, opacity: 0.26, rot: '-9deg', dur: '19s' },
+  { top: '73%', left: '31%', size: 94, blur: 3.5, opacity: 0.2, rot: '21deg', dur: '16s' },
+  { top: '76%', left: '53%', size: 110, blur: 3, opacity: 0.21, rot: '-17deg', dur: '22s' },
+  { top: '72%', left: '71%', size: 140, blur: 2, opacity: 0.27, rot: '11deg', dur: '18s' },
+  { top: '84%', left: '87%', size: 104, blur: 3, opacity: 0.22, rot: '-22deg', dur: '14s' },
+  { top: '87%', left: '19%', size: 88, blur: 3, opacity: 0.22, rot: '15deg', dur: '17s' },
+  { top: '88%', left: '43%', size: 98, blur: 3.5, opacity: 0.2, rot: '-6deg', dur: '20s' },
 ];
 
 function LoginScreen() {
@@ -89,21 +89,21 @@ function LoginScreen() {
       </div>
 
       <div className="card auth-card">
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 14 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 20 }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src="/logo.png"
             alt="SAVT"
             style={{
-              width: 165,
+              width: 156,
               height: 'auto',
               display: 'block',
-              marginBottom: 8,
+              marginBottom: 18,
               filter: 'drop-shadow(0 6px 14px rgba(37, 99, 235, 0.18))',
             }}
           />
-          <h1 style={{ fontSize: 18, fontWeight: 700, color: 'var(--dark)', lineHeight: 1.15 }}>Телефония SAVT</h1>
-          <p style={{ fontSize: 12, color: 'var(--muted)', marginTop: 2 }}>
+          <h1 style={{ fontSize: 19, fontWeight: 700, color: 'var(--dark)', lineHeight: 1.2 }}>Телефония SAVT</h1>
+          <p style={{ fontSize: 13, color: 'var(--muted)', marginTop: 5 }}>
             Войдите в панель управления АТС
           </p>
         </div>
@@ -180,13 +180,13 @@ function LoginScreen() {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 11 }}>
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 13 }}>
           <div>
-            <label style={{ display: 'block', fontSize: 12, fontWeight: 500, color: 'var(--muted)', marginBottom: 4 }}>
+            <label style={{ display: 'block', fontSize: 12, fontWeight: 500, color: 'var(--muted)', marginBottom: 5 }}>
               Логин
             </label>
             <div style={{ position: 'relative' }}>
-              <User size={15} style={{ position: 'absolute', left: 11, top: '50%', transform: 'translateY(-50%)', color: 'var(--muted)' }} />
+              <User size={15} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--muted)' }} />
               <input
                 type="text"
                 autoComplete="username"
@@ -196,7 +196,7 @@ function LoginScreen() {
                 placeholder="Введите логин"
                 style={{
                   width: '100%',
-                  padding: '8px 12px 8px 34px',
+                  padding: '9px 12px 9px 36px',
                   borderRadius: 8,
                   border: '1px solid var(--border)',
                   background: 'var(--card)',
@@ -208,11 +208,11 @@ function LoginScreen() {
           </div>
 
           <div>
-            <label style={{ display: 'block', fontSize: 12, fontWeight: 500, color: 'var(--muted)', marginBottom: 4 }}>
+            <label style={{ display: 'block', fontSize: 12, fontWeight: 500, color: 'var(--muted)', marginBottom: 5 }}>
               Пароль
             </label>
             <div style={{ position: 'relative' }}>
-              <Lock size={15} style={{ position: 'absolute', left: 11, top: '50%', transform: 'translateY(-50%)', color: 'var(--muted)' }} />
+              <Lock size={15} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--muted)' }} />
               <input
                 type="password"
                 autoComplete="current-password"
@@ -222,7 +222,7 @@ function LoginScreen() {
                 placeholder="Введите пароль"
                 style={{
                   width: '100%',
-                  padding: '8px 12px 8px 34px',
+                  padding: '9px 12px 9px 36px',
                   borderRadius: 8,
                   border: '1px solid var(--border)',
                   background: 'var(--card)',
@@ -237,7 +237,7 @@ function LoginScreen() {
             type="submit"
             className="btn btn-primary"
             disabled={submitting || retryCountdown > 0}
-            style={{ width: '100%', justifyContent: 'center', padding: '9px', marginTop: 4 }}
+            style={{ width: '100%', justifyContent: 'center', padding: '10px', marginTop: 6 }}
           >
             {submitting ? (
               <>
