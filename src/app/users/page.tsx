@@ -34,6 +34,7 @@ export default function UsersAdminPage() {
   const limit = 50;
 
   const [loading, setLoading] = useState<boolean>(true);
+  const [manualRefreshing, setManualRefreshing] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
@@ -63,7 +64,7 @@ export default function UsersAdminPage() {
         limit: String(limit),
         offset: String(offset),
       });
-      const res = await apiFetch(`/api/auth/users?${params.toString()}`);
+      const res = await apiFetch(`/api/auth/users?${params.toString()}`, { cache: 'no-store' });
 
       if (res.status === 403) {
         setError('Нет доступа: раздел доступен только администраторам.');
@@ -217,8 +218,20 @@ export default function UsersAdminPage() {
         </div>
 
         <div style={{ display: 'flex', gap: 10 }}>
-          <button className="btn" onClick={fetchUsers} disabled={loading}>
-            <RefreshCw size={14} className={loading ? 'animate-spin' : ''} /> Обновить
+          <button
+            className="btn"
+            onClick={async () => {
+              setManualRefreshing(true);
+              try {
+                await fetchUsers();
+              } finally {
+                setTimeout(() => setManualRefreshing(false), 450);
+              }
+            }}
+            disabled={loading || manualRefreshing}
+          >
+            <RefreshCw size={14} className={loading || manualRefreshing ? 'animate-spin' : ''} />{' '}
+            {manualRefreshing ? 'Обновление...' : 'Обновить'}
           </button>
           <button
             className="btn btn-primary"

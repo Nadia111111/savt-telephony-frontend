@@ -1,12 +1,10 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import Link from 'next/link';
 import { TelephonySettings, DayOfWeek } from '@/types/telephony';
 import { useAuth } from '@/components/AuthContext';
 import { apiFetch, extractApiError } from '@/lib/api-client';
 import {
-  Building,
   Phone,
   Clock,
   Calendar,
@@ -62,6 +60,7 @@ export default function SettingsPage() {
   const [newHolidayDate, setNewHolidayDate] = useState<string>('');
 
   const [loading, setLoading] = useState<boolean>(true);
+  const [manualRefreshing, setManualRefreshing] = useState<boolean>(false);
   const [savingSettings, setSavingSettings] = useState<boolean>(false);
   const [settingsSuccess, setSettingsSuccess] = useState<string | null>(null);
   const [settingsError, setSettingsError] = useState<string | null>(null);
@@ -78,7 +77,7 @@ export default function SettingsPage() {
     setLoading(true);
     setSettingsError(null);
     try {
-      const res = await apiFetch('/api/settings/telephony');
+      const res = await apiFetch('/api/settings/telephony', { cache: 'no-store' });
       if (res.status === 403) {
         setSettingsError('Нет доступа к настройкам АТС');
         return;
@@ -102,7 +101,7 @@ export default function SettingsPage() {
     setLoadingHolidays(true);
     setHolidaysError(null);
     try {
-      const res = await apiFetch('/api/settings/holidays');
+      const res = await apiFetch('/api/settings/holidays', { cache: 'no-store' });
       if (res.status === 403) {
         setHolidaysError('Нет доступа к календарю праздников');
         return;
@@ -268,16 +267,22 @@ export default function SettingsPage() {
     );
   }
 
+  const handleRefreshAll = async () => {
+    setManualRefreshing(true);
+    try {
+      await Promise.all([fetchSettings(), fetchHolidays()]);
+    } finally {
+      setTimeout(() => setManualRefreshing(false), 450);
+    }
+  };
+
   return (
     <div>
       {/* Подтабы */}
       <div className="subtabs">
-        <Link href="/departments" className="subtab">
-          <Building size={18} /> Отделы
-        </Link>
-        <Link href="/settings" className="subtab active">
+        <div className="subtab active">
           <Phone size={18} /> Параметры АТС и праздники
-        </Link>
+        </div>
       </div>
 
       {/* Информационная шапка */}
@@ -290,13 +295,13 @@ export default function SettingsPage() {
         </div>
         <button
           type="button"
-          onClick={() => { fetchSettings(); fetchHolidays(); }}
+          onClick={handleRefreshAll}
           className="btn"
           title="Обновить настройки с сервера"
-          disabled={loading || savingSettings}
+          disabled={loading || loadingHolidays || manualRefreshing || savingSettings}
         >
-          <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
-          Обновить
+          <RefreshCw size={14} className={loading || loadingHolidays || manualRefreshing ? 'animate-spin' : ''} />
+          {manualRefreshing ? 'Обновление...' : 'Обновить'}
         </button>
       </div>
 

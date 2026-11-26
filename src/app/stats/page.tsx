@@ -19,12 +19,11 @@ import {
   ChevronRight,
   PhoneIncoming,
   PhoneMissed,
-  PhoneOutgoing,
   PhoneCall,
   Search,
 } from 'lucide-react';
 
-type SliceKey = 'incoming' | 'missed' | 'outgoing';
+type SliceKey = 'incoming' | 'missed';
 
 const MINSK_YMD_FORMATTER = new Intl.DateTimeFormat('en-CA', {
   timeZone: 'Europe/Minsk',
@@ -213,6 +212,7 @@ export default function StatisticsPage() {
   });
 
   const [loading, setLoading] = useState<boolean>(true);
+  const [manualRefreshing, setManualRefreshing] = useState<boolean>(false);
   const [backendError, setBackendError] = useState<string | null>(null);
 
   // Состояния интерактивности графиков
@@ -249,6 +249,7 @@ export default function StatisticsPage() {
     try {
       const res = await apiFetch(`/api/statistics/calls?${params.toString()}`, {
         signal: controller.signal,
+        cache: 'no-store',
       });
       if (res.status === 403) {
         setBackendError('Нет доступа к просмотру статистики');
@@ -298,6 +299,7 @@ export default function StatisticsPage() {
     try {
       const res = await apiFetch(`/api/statistics/callers?${params.toString()}`, {
         signal: controller.signal,
+        cache: 'no-store',
       });
       if (res.status === 403) {
         setBackendError('Нет доступа к статистике по номерам');
@@ -354,17 +356,19 @@ export default function StatisticsPage() {
   const maxBucketValue = useMemo(() => {
     if (!filledBuckets.length) return 4;
     const maxVal = Math.max(
-      ...filledBuckets.map((b) => Math.max(b.incoming, b.outgoing, b.missed))
+      ...filledBuckets.map((b) => Math.max(b.incoming, b.missed))
     );
     if (maxVal <= 0) return 4;
     const step = Math.ceil(maxVal / 4);
     return step * 4;
   }, [filledBuckets]);
 
+  const visibleTotal = callsData.totals.incoming + callsData.totals.missed;
+
   // Сегменты круговой диаграммы
   const donutSegments = useMemo(() => {
-    const { incoming, missed, outgoing, missed_with_voicemail, missed_without_voicemail } = callsData.totals;
-    const sum = incoming + missed + outgoing;
+    const { incoming, missed, missed_with_voicemail, missed_without_voicemail } = callsData.totals;
+    const sum = incoming + missed;
     const radius = 70;
     const circumference = 2 * Math.PI * radius;
 
@@ -384,14 +388,6 @@ export default function StatisticsPage() {
         value: missed,
         color: 'var(--miss)',
         extra: `с голосовым: ${missed_with_voicemail} · без: ${missed_without_voicemail}`,
-      },
-      {
-        key: 'outgoing' as SliceKey,
-        label: 'Исходящие',
-        shortLabel: 'Исходящие',
-        value: outgoing,
-        color: 'var(--out)',
-        extra: null as string | null,
       },
     ];
 
@@ -534,8 +530,20 @@ export default function StatisticsPage() {
           )}
 
           <div style={{ marginLeft: 'auto', alignSelf: 'center' }}>
-            <button className="btn" onClick={() => (tab === 'calls' ? fetchCallsStats() : fetchCallersStats())}>
-              <RefreshCw size={14} className={loading ? 'animate-spin' : ''} /> Обновить
+            <button
+              className="btn"
+              disabled={loading || manualRefreshing}
+              onClick={async () => {
+                setManualRefreshing(true);
+                try {
+                  await (tab === 'calls' ? fetchCallsStats() : fetchCallersStats());
+                } finally {
+                  setTimeout(() => setManualRefreshing(false), 450);
+                }
+              }}
+            >
+              <RefreshCw size={14} className={loading || manualRefreshing ? 'animate-spin' : ''} />{' '}
+              {manualRefreshing ? 'Обновление...' : 'Обновить'}
             </button>
           </div>
         </div>
@@ -545,13 +553,13 @@ export default function StatisticsPage() {
       {tab === 'calls' && (
         <>
           {/* Карточки итогов из totals */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 16 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 16 }}>
             <div className="card" style={{ margin: 0, padding: 18 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, color: 'var(--muted)', fontSize: 12 }}>
                 <PhoneCall size={18} /> Всего звонков
               </div>
               <div style={{ fontSize: 28, fontWeight: 700, color: 'var(--dark)', marginTop: 8 }}>
-                {callsData.totals.total}
+                {visibleTotal}
               </div>
             </div>
 
@@ -577,15 +585,6 @@ export default function StatisticsPage() {
                 </div>
               </div>
             </div>
-
-            <div className="card" style={{ margin: 0, padding: 18 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, color: 'var(--out)', fontSize: 12 }}>
-                <PhoneOutgoing size={18} /> Исходящие
-              </div>
-              <div style={{ fontSize: 28, fontWeight: 700, color: 'var(--out)', marginTop: 8 }}>
-                {callsData.totals.outgoing}
-              </div>
-            </div>
           </div>
 
           {/* График и интерактивная круговая диаграмма */}
@@ -601,10 +600,6 @@ export default function StatisticsPage() {
                   Принятые входящие
                 </span>
                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                  <span style={{ width: 10, height: 10, borderRadius: 3, background: 'var(--out)' }} />
-                  Исходящие
-                </span>
-                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                   <span style={{ width: 10, height: 10, borderRadius: 3, background: 'var(--miss)' }} />
                   Пропущенные
                 </span>
@@ -616,7 +611,7 @@ export default function StatisticsPage() {
                 <RefreshCw size={24} className="animate-spin" style={{ margin: '0 auto 8px' }} />
                 Загрузка статистики...
               </div>
-            ) : callsData.totals.total === 0 || filledBuckets.length === 0 ? (
+            ) : visibleTotal === 0 || filledBuckets.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '60px 0', color: 'var(--muted)' }}>
                 За выбранный период звонков нет
               </div>
@@ -645,10 +640,6 @@ export default function StatisticsPage() {
                           <b className="c-in">{hoveredBucket.incoming}</b>
                         </div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
-                          <span style={{ color: 'var(--muted)' }}>Исходящие</span>
-                          <b className="c-out">{hoveredBucket.outgoing}</b>
-                        </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
                           <span style={{ color: 'var(--muted)' }}>Пропущенные</span>
                           <b className="c-miss">{hoveredBucket.missed}</b>
                         </div>
@@ -659,7 +650,7 @@ export default function StatisticsPage() {
                         )}
                         <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, marginTop: 2, paddingTop: 4, borderTop: '1px solid var(--border)' }}>
                           <span style={{ color: 'var(--dark)', fontWeight: 600 }}>Всего</span>
-                          <b style={{ color: 'var(--dark)' }}>{hoveredBucket.total}</b>
+                          <b style={{ color: 'var(--dark)' }}>{hoveredBucket.incoming + hoveredBucket.missed}</b>
                         </div>
                       </div>
                     </div>
@@ -688,7 +679,6 @@ export default function StatisticsPage() {
 
                       {filledBuckets.map((b, idx) => {
                         const inPct = b.incoming > 0 ? Math.max(4, Math.min(100, (b.incoming / maxBucketValue) * 100)) : 0;
-                        const outPct = b.outgoing > 0 ? Math.max(4, Math.min(100, (b.outgoing / maxBucketValue) * 100)) : 0;
                         const missPct = b.missed > 0 ? Math.max(4, Math.min(100, (b.missed / maxBucketValue) * 100)) : 0;
                         const showLabel =
                           filledBuckets.length <= 16 ||
@@ -706,10 +696,6 @@ export default function StatisticsPage() {
                               <div
                                 className="bar in"
                                 style={{ height: `${inPct}%` }}
-                              />
-                              <div
-                                className="bar out"
-                                style={{ height: `${outPct}%` }}
                               />
                               <div
                                 className="bar miss"
@@ -758,7 +744,7 @@ export default function StatisticsPage() {
                         </div>
                       ) : (
                         <div style={{ fontWeight: 600, color: 'var(--dark)', marginBottom: 6, paddingBottom: 4, borderBottom: '1px solid var(--border)' }}>
-                          Всего звонков: {callsData.totals.total}
+                          Всего звонков: {visibleTotal}
                         </div>
                       )}
 
@@ -826,7 +812,7 @@ export default function StatisticsPage() {
                       ) : (
                         <>
                           <span className="label">Всего</span>
-                          <span className="total">{callsData.totals.total}</span>
+                          <span className="total">{visibleTotal}</span>
                         </>
                       )}
                     </div>

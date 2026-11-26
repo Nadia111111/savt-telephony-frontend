@@ -4,7 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from './AuthContext';
-import { History, BarChart2, Building, Settings, Users, FileText } from 'lucide-react';
+import { History, BarChart2, Building, Settings, Users } from 'lucide-react';
 
 export default function Sidebar() {
   const pathname = usePathname();
@@ -48,19 +48,6 @@ export default function Sidebar() {
       })}
 
       <div className="spacer" />
-
-      {isAdmin && (
-        <a
-          href="/docs"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="nav-item"
-          title="Документация API (Swagger)"
-        >
-          <FileText size={22} />
-          <span>API Docs</span>
-        </a>
-      )}
 
       {bottomItems.map((item) => {
         const Icon = item.icon;

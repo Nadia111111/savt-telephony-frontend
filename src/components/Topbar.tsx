@@ -26,7 +26,7 @@ export default function Topbar() {
   const fetchHealth = useCallback(async (manual = false) => {
     if (manual) setIsRefreshing(true);
     try {
-      const res = await fetch('/health', { credentials: 'same-origin' });
+      const res = await fetch('/health', { credentials: 'same-origin', cache: 'no-store' });
       if (res.status === 200 || res.status === 503) {
         const data = await res.json();
         setHealth(data);
@@ -38,7 +38,7 @@ export default function Topbar() {
       setHealthError('Сервер недоступен');
     } finally {
       setHealthLoading(false);
-      if (manual) setTimeout(() => setIsRefreshing(false), 500);
+      if (manual) setTimeout(() => setIsRefreshing(false), 600);
     }
   }, []);
 
@@ -79,15 +79,17 @@ export default function Topbar() {
 
     if (healthError || !health) {
       return (
-        <div
+        <button
+          type="button"
           className="status-pill"
+          disabled={isRefreshing}
           onClick={() => fetchHealth(true)}
           title={`Связь с сервером телефонии потеряна: ${healthError || 'Нет ответа'}. Нажмите для повторной проверки.`}
         >
           <span className="status-dot disconnected" />
           <span style={{ color: 'var(--miss)', fontWeight: 600 }}>АТС оффлайн</span>
           <RefreshCw size={12} className={isRefreshing ? 'animate-spin' : ''} style={{ color: 'var(--muted)', marginLeft: 2 }} />
-        </div>
+        </button>
       );
     }
 
@@ -107,15 +109,17 @@ export default function Topbar() {
     }
 
     return (
-      <div
+      <button
+        type="button"
         className="status-pill"
+        disabled={isRefreshing}
         onClick={() => fetchHealth(true)}
         title={`${tooltip}. Нажмите для обновления.`}
       >
         <span className={`status-dot ${dotClass}`} />
         <span>{label}</span>
         <RefreshCw size={12} className={isRefreshing ? 'animate-spin' : ''} style={{ color: 'var(--muted)', marginLeft: 2 }} />
-      </div>
+      </button>
     );
   };
 
