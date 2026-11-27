@@ -58,6 +58,8 @@ export default function Topbar() {
         return 'Статистика';
       case '/departments':
         return 'Отделы';
+      case '/contacts':
+        return 'Контакты';
       case '/settings':
         return 'Настройки';
       case '/users':

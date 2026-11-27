@@ -108,6 +108,37 @@ export type UsersPage = {
   total: number;
 };
 
+/* ============ КОНТАКТЫ (BITRIX24 + АСЯ) ============ */
+export type ContactItem = {
+  id: number;
+  name: string;
+  phones: string[];
+  skip_bot: boolean;
+};
+
+export type ContactsPage = {
+  items: ContactItem[];
+  total: number;
+  synced_at: string | null;
+};
+
+export type ContactSkipBotResponse = {
+  id?: number;
+  skip_bot: boolean;
+  applied?: boolean;
+};
+
+export type CallContactMatch = {
+  id?: number | string;
+  name?: string | null;
+  url: string;
+  phones?: string[];
+};
+
+export type CallContactsResponse = {
+  items: CallContactMatch[];
+};
+
 export type ActiveTab = 'incoming' | 'outgoing' | 'missed';
 
 /* ============ СТАТИСТИКА (API Контракт) ============ */

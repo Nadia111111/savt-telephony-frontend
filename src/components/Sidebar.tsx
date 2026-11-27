@@ -4,7 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from './AuthContext';
-import { History, BarChart2, Building, Settings, Users } from 'lucide-react';
+import { History, BarChart2, Building, Settings, Users, BookUser } from 'lucide-react';
 
 export default function Sidebar() {
   const pathname = usePathname();
@@ -17,6 +17,7 @@ export default function Sidebar() {
     { label: 'История', href: '/', icon: History, visible: true },
     { label: 'Статистика', href: '/stats', icon: BarChart2, visible: true },
     { label: 'Отделы', href: '/departments', icon: Building, visible: canManage },
+    { label: 'Контакты', href: '/contacts', icon: BookUser, visible: canManage },
     { label: 'Пользователи', href: '/users', icon: Users, visible: isAdmin },
   ].filter((item) => item.visible);
 

@@ -7,6 +7,7 @@ import { useDepartmentFilterOptions, getEmployeeLabel } from '@/lib/departments-
 import { apiFetch, extractApiError } from '@/lib/api-client';
 import { useAudioPlayer } from '@/components/AudioPlayerContext';
 import CallDrawer from '@/components/CallDrawer';
+import { BitrixContactsModal, useCallContactsLookup } from '@/components/BitrixContactsModal';
 import { ArrowDownLeft, ArrowUpRight, ArrowDownRight, Play, Volume2, Search, Filter, AlertCircle, RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react';
 
 const MOCK_CALLS: CallListItem[] = [
@@ -156,6 +157,7 @@ export default function HistoryPage() {
   const [selectedCallId, setSelectedCallId] = useState<number | null>(null);
 
   const { playCall, currentCall } = useAudioPlayer();
+  const { loadingCallId, modalState: contactsModalState, closeModal: closeContactsModal, lookupCallContacts } = useCallContactsLookup();
 
   const currentRange = useMemo(() => {
     return getMinskDateRange(period);
@@ -472,7 +474,34 @@ export default function HistoryPage() {
                             ) : (
                               <ArrowDownLeft className="arrow in" />
                             )}
-                            <span>{callerDisplay}</span>
+                            {c.caller || c.caller_raw ? (
+                              <button
+                                type="button"
+                                className="link"
+                                style={{
+                                  background: 'none',
+                                  border: 'none',
+                                  padding: 0,
+                                  font: 'inherit',
+                                  cursor: loadingCallId === c.id ? 'wait' : 'pointer',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: 6,
+                                  textAlign: 'left',
+                                }}
+                                disabled={loadingCallId === c.id}
+                                title="Найти контакт в Bitrix24"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  lookupCallContacts(c.id, callerDisplay);
+                                }}
+                              >
+                                <span>{callerDisplay}</span>
+                                {loadingCallId === c.id && <RefreshCw size={13} className="animate-spin" />}
+                              </button>
+                            ) : (
+                              <span>{callerDisplay}</span>
+                            )}
                           </div>
                         </td>
                         <td>
@@ -545,6 +574,12 @@ export default function HistoryPage() {
       <CallDrawer
         callId={selectedCallId}
         onClose={() => setSelectedCallId(null)}
+      />
+
+      {/* Карточки контактов Bitrix24 */}
+      <BitrixContactsModal
+        state={contactsModalState}
+        onClose={closeContactsModal}
       />
     </div>
   );

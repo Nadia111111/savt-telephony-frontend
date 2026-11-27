@@ -6,6 +6,7 @@ import { useAudioPlayer } from './AudioPlayerContext';
 import { formatDuration, formatDateTimeFull } from '@/lib/date-utils';
 import { getEmployeeLabel } from '@/lib/departments-filter';
 import { apiFetch, extractApiError } from '@/lib/api-client';
+import { BitrixContactsModal, useCallContactsLookup } from './BitrixContactsModal';
 import { X, Play, Volume2, Bot, MessageSquare, Send, RefreshCw, AlertCircle, CheckCircle2, Clock } from 'lucide-react';
 
 interface CallDrawerProps {
@@ -18,6 +19,7 @@ export default function CallDrawer({ callId, onClose }: CallDrawerProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { playCall } = useAudioPlayer();
+  const { loadingCallId, modalState: contactsModalState, closeModal: closeContactsModal, lookupCallContacts } = useCallContactsLookup();
 
   const fetchCallDetail = async (id: number) => {
     try {
@@ -105,13 +107,40 @@ export default function CallDrawer({ callId, onClose }: CallDrawerProps) {
   const startedAtFormatted = detail ? formatDateTimeFull(detail.started_at) : '';
 
   return (
-    <div className="drawer-overlay" onClick={onClose}>
-      <div className="drawer" onClick={(e) => e.stopPropagation()}>
-        <div className="drawer-header">
-          <div className="drawer-title">
-            <h2>Карточка звонка #{callId}</h2>
-            <p>{callerNumber} · {startedAtFormatted}</p>
-          </div>
+    <>
+      <div className="drawer-overlay" onClick={onClose}>
+        <div className="drawer" onClick={(e) => e.stopPropagation()}>
+          <div className="drawer-header">
+            <div className="drawer-title">
+              <h2>Карточка звонка #{callId}</h2>
+              <p>
+                {detail && (detail.caller || detail.caller_raw) ? (
+                  <button
+                    type="button"
+                    className="link"
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      padding: 0,
+                      font: 'inherit',
+                      cursor: loadingCallId === detail.id ? 'wait' : 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 5,
+                    }}
+                    disabled={loadingCallId === detail.id}
+                    title="Найти контакт в Bitrix24"
+                    onClick={() => lookupCallContacts(detail.id, callerNumber)}
+                  >
+                    <span>{callerNumber}</span>
+                    {loadingCallId === detail.id && <RefreshCw size={12} className="animate-spin" />}
+                  </button>
+                ) : (
+                  callerNumber
+                )}
+                {' '}· {startedAtFormatted}
+              </p>
+            </div>
           <button className="close-btn" onClick={onClose} title="Закрыть">
             <X size={18} />
           </button>
@@ -360,5 +389,11 @@ export default function CallDrawer({ callId, onClose }: CallDrawerProps) {
         )}
       </div>
     </div>
+
+    <BitrixContactsModal
+      state={contactsModalState}
+      onClose={closeContactsModal}
+    />
+    </>
   );
 }
